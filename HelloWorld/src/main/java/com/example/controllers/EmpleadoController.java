@@ -39,7 +39,7 @@ public class EmpleadoController {
 	@RequestMapping(value = "/empleado/{nroDoc}", method = RequestMethod.POST)
 	public ResponseEntity<?> update(@PathVariable("nroDoc") Long nroDoc) {
 
-		Empleado empleadoModificado = empleadoService.updateEmpleado(new Empleado("asdf", nroDoc));
+		Empleado empleadoModificado = empleadoService.updateEmpleado(new Empleado("Empleado " + nroDoc.toString(), nroDoc));
 
 		if (empleadoModificado == null) {
 			return new ResponseEntity("Empleado no encontrado", HttpStatus.NOT_FOUND);
