@@ -1,0 +1,191 @@
+Marce necesitaba un Server que reciba XML-RPC, me dijo que queria hacer andar:
+http://xml.apache.org/xmlrpc/
+En la documentacion de esta libreria dice que se puede crear un servlet e incluir esta libreria.
+Pero tambien hay una forma de crear un simple Cliente y un Servidor. Eso es lo que escribi en JavaClient.java y JavaServer.java
+Lo que hay que hacer es compilar por separado ambos .java y usar la libreria xmlrpc-1.2-b1.
+Seria algo asi:
+-> javac -cp ".;.\jars\xmlrpc-1.2-b1.jar" JavaClient.java
+-> javac -cp ".;.\jars\xmlrpc-1.2-b1.jar" JavaServer.java
+La libreria xmlrpc-1.2-b1.jar tiene que estar en la carpeta \jars, la estructura seria asi:
+.\
+|_ JavaClient.java
+|_ JavaServer.java
+|_ jars\xmlrpc-1.2-b1.jar
+
+Una vez que tenemos los .class podemos ejecutarlos por separado. Primero levantamos el server:
+-> java -cp ".;.\jars\xmlrpc-1.2-b1.jar" JavaServer
+y luego le pegamos con el cliente:
+-> java -cp ".;.\jars\xmlrpc-1.2-b1.jar" JavaClient
+
+* Una cosa a tener en cuenta es que ".;.\jars\xmlrpc-1.2-b1.jar" esta funcionando bien en Windows. En linux/Mac hay que cambiarlo, seguro
+que el ';' pasa a ser ':' y la '\' se cambia por '/' ... Sino cuando corremos o compilamos nos va a dar errores como que no encuentra el
+metodo main, o cosas asi que no tienen sentido.
+
+-----------
+Ahora bien, tambien encontre la forma de levantar un server y crear un cliente todo en Eclipse. La info estaba en una web 
+https://blog.daum.net/haha25/5389797 que decia:
+
+The example come from Apache http://ws.apache.org/xmlrpc/server.html
+
+1.Create a new Project in Eclipse:
+File->New->Dynamic Web Project
+    Project name: xmlrpctest
+    Target runtime is Apache Tomcat v9.0
+    Click Next
+    Click Next 
+    Tildar Generate web.xml deployment ... pq las ultimas versiones ya no hace falta dado que levanta todo con anotations.
+    Click Finish
+
+2. Download the software, nosotros tenemos las librerias en \jars pero por las dudas...
+From page http://ws.apache.org/xmlrpc/download.html click distribution directory and choice a mirror which apache suggest
+Download: apache-xmlrpc-current-bin.zip --> The current version is XML-RPC 3.1.3
+
+3. Copiar los jars dentro del proyecto
+Unpack the file apache-xmlrpc-current-bin.zip
+Copy all following files to the \lib directory of our project xmlrpctest,
+which you can find it in workspace directory of Eclipse
+
+Ubicar el Directorio of C:\...\xmlrpctest\WebContent\WEB-INF\lib y copiar las 5 librerias, nos quedaria algo asi:
+
+.\xmlrpctest\WebContent\WEB-INF\lib
+|_ commons-logging-1.1.jar
+|_ ws-commons-util-1.0.2.jar
+|_ xmlrpc-client-3.1.3.jar
+|_ xmlrpc-common-3.1.3.jar
+|_ xmlrpc-server-3.1.3.jar
+
+In Eclipse right click the project xmlrpctest->Refresh or press F5.
+you will see the 5 jar files in xmlrpctest.WebContent.Web-INF.lib 
+and in xmlrpctest.Java Resources src.Web App Libraries
+
+4. Create class Calculator
+-Right click on Project, select New Java Class
+    package org.apache.xmlrpc.demo->New->Class
+    name: org.apache.xmlrpc.demo
+    Finish
+
+Source of Calculator.java:
+
+package org.apache.xmlrpc.demo;
+public class Calculator {
+    public int add(int i1, int i2) {
+        return i1 + i2;
+    }
+    public int subtract(int i1, int i2) {
+        return i1-i2;
+    }
+}
+
+5. Create properties file XmlRpcServlet.properties
+The property file must be called XmlRpcServlet.properties, and it must be located in the package org.apache.xmlrpc.webserver 
+- Create package: org.apache.xmlrpc.webserver -> Righ click on Project xmlrpctest->New->Package 
+Dialog New Java Packagepackage 
+    name: org.apache.xmlrpc.webserver 
+    Finish
+
+Create file XmlRpcServlet.properties
+-Right click on package org.apache.xmlrpc.webserver ->New->Other..->File->Next
+Dialog File 
+    name: XmlRpcServlet.properties
+    Finish
+
+Poner en XmlRpcServlet.properties:
+Calculator=org.apache.xmlrpc.demo.Calculator
+
+6. Edit file web.xml  (
+Si no aparece es porque hicimos el proyecto sin web.xml, tendría que estar en /Project/WebContent/WEB-INF/web.xml
+El contenido seria algo asi, lo importante es la definicion del servlet, y la del servlet-mapping
+
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://java.sun.com/xml/ns/javaee" xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+	id="WebApp_ID" version="2.5">
+	<display-name>xmlrpctest_run</display-name>
+	<welcome-file-list>
+		<welcome-file>index.html</welcome-file>
+		<welcome-file>index.htm</welcome-file>
+		<welcome-file>index.jsp</welcome-file>
+		<welcome-file>default.html</welcome-file>
+		<welcome-file>default.htm</welcome-file>
+		<welcome-file>default.jsp</welcome-file>
+	</welcome-file-list>
+	<servlet>
+		<servlet-name>XmlRpcServlet</servlet-name>
+		<servlet-class>org.apache.xmlrpc.webserver.XmlRpcServlet</servlet-class>
+		<init-param>
+			<param-name>enabledForExtensions</param-name>
+			<param-value>true</param-value>
+		</init-param>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>XmlRpcServlet</servlet-name>
+		<url-pattern>/xmlrpc</url-pattern>
+	</servlet-mapping>
+</web-app>
+
+Listo hasta aca tendría que funcionar, esto lo agregamos a un Tomcat y ya estaría listo para recibir peticiones de algun cliente.
+Podriamos probarlo utilizando el cliente que hicimos antes, sino tambien podemos hacer un cliente ahora y tenerlo adentro del proyecto
+para ir probando:
+
+7. Levantar el Server
+Open server view Window->Show Views->Servers
+
+-Add project xmltest to Tomcat Sever
+.Right click Tomcat v6.0 at localhost"->Add and Remove..
+.Choice/Add xmlrpctest
+.Finish
+
+-Start Tomcat Sever
+.Right click Tomcat v6.0 at localhost->Start
+
+
+8. Create a client program
+Right click on Project ->New Java Class
+    package: org.apache.xml.rpc.demo
+    name: SimpleClient
+
+Contenido de SimpleClient.java
+
+package org.apache.xmlrpc.demo;
+
+import java.net.URL;
+import org.apache.xmlrpc.client.XmlRpcClient;
+import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
+
+public class SimpleClient {
+
+	public SimpleClient() {
+		try {
+			System.out.println("Try to add 2 + 3 via XML-RPC...");
+			XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
+			config.setServerURL(new URL("http://127.0.0.1:8080/xmlrpctest/xmlrpc"));
+			XmlRpcClient client = new XmlRpcClient();
+			client.setConfig(config);
+			Object[] params = new Object[] {new Integer(2), new Integer(3) };
+			Integer result = (Integer) client.execute("Calculator.add", params);
+			System.out.println("The returned values ​​is: "+ result);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static void main(String[] args) {
+		new SimpleClient();
+	}
+}
+
+9. Run Test, Run Simple Client
+
+Right click on SimpleClient.java->Run As->Java Application
+
+Output in Console View:
+
+Try to add 2 + 3 via XML-RPC...
+The returned values ​​is: 5
+
+
+
+********** Webs con la definicion de XML-RPC
+https://www.tutorialspoint.com/xml-rpc/xml_rpc_examples.htm
+http://www.perfectxml.com/oreilly/chapter.asp?row_id=11
